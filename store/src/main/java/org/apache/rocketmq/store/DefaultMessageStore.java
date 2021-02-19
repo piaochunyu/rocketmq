@@ -369,6 +369,13 @@ public class DefaultMessageStore implements MessageStore {
         return PutMessageStatus.PUT_OK;
     }
 
+    /**
+     * 1、topic长度大于127
+     * 2、body大于4兆
+     *
+     * @param messageExtBatch
+     * @return
+     */
     private PutMessageStatus checkMessages(MessageExtBatch messageExtBatch) {
         if (messageExtBatch.getTopic().length() > Byte.MAX_VALUE) {
             log.warn("putMessage message topic length too long " + messageExtBatch.getTopic().length());
@@ -383,6 +390,14 @@ public class DefaultMessageStore implements MessageStore {
         return PutMessageStatus.PUT_OK;
     }
 
+    /**
+     * 1、判断存储状态
+     * 2、判断broker角色 slave不允许写入
+     * 3、判断运行中的标记 不可写、写入队列错误、写入索引错误、磁盘写满都都拒绝写入
+     * 4、磁盘未满，但是磁盘响应时间长，忙碌状态也拒绝写入
+     *
+     * @return 状态
+     */
     private PutMessageStatus checkStoreStatus() {
         if (this.shutdown) {
             log.warn("message store has shutdown, so putMessage is forbidden");
@@ -502,13 +517,21 @@ public class DefaultMessageStore implements MessageStore {
         return result;
     }
 
+    /**
+     * 1、检查存储状态
+     * 2、检查消息长度
+     * @param messageExtBatch Message batch.
+     * @return
+     */
     @Override
     public PutMessageResult putMessages(MessageExtBatch messageExtBatch) {
+        // 1、检查存储状态
         PutMessageStatus checkStoreStatus = this.checkStoreStatus();
         if (checkStoreStatus != PutMessageStatus.PUT_OK) {
             return new PutMessageResult(checkStoreStatus, null);
         }
 
+        // 检查消息长度
         PutMessageStatus msgCheckStatus = this.checkMessages(messageExtBatch);
         if (msgCheckStatus == PutMessageStatus.MESSAGE_ILLEGAL) {
             return new PutMessageResult(msgCheckStatus, null);

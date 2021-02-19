@@ -24,11 +24,17 @@ public abstract class ReferenceResource {
     protected volatile boolean cleanupOver = false;
     private volatile long firstShutdownTimestamp = 0;
 
+    /**
+     * 上锁
+     * @return
+     */
     public synchronized boolean hold() {
         if (this.isAvailable()) {
+            // 自增
             if (this.refCount.getAndIncrement() > 0) {
                 return true;
             } else {
+                // 自减 要将刚才的操作还原。相当于不影响标记位
                 this.refCount.getAndDecrement();
             }
         }
@@ -53,6 +59,9 @@ public abstract class ReferenceResource {
         }
     }
 
+    /**
+     * 解锁
+     */
     public void release() {
         long value = this.refCount.decrementAndGet();
         if (value > 0)

@@ -1023,6 +1023,7 @@ public class CommitLog {
 
         StoreStatsService storeStatsService = this.defaultMessageStore.getStoreStatsService();
 
+        // 事务状态
         final int tranType = MessageSysFlag.getTransactionValue(messageExtBatch.getSysFlag());
 
         if (tranType != MessageSysFlag.TRANSACTION_NOT_TYPE) {
